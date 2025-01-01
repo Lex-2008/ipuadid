@@ -178,11 +178,13 @@ ngx_http_variable_remote_addr_ipscrub(ngx_http_request_t *r, ngx_http_variable_v
       r->connection->addr_text.data[1] == '.') {
     // This is an IPv4 address.
     // IPv4 has a 32-bit address space. Base64 is 6 bits-per-char. ceil(32/6) = 6.
-    len = 6;
+    // Plus 2 characters for user-agent.
+    len = 8;
   } else {
     // This is an IPv6 address.
     // IPv6 has a 128-bit address space. Base64 is 6 bits-per-char. ceil(128/6) = 22.
-    len = 22;
+    // Plus 2 characters for user-agent.
+    len = 24;
   }
 
   v->len = len; 
