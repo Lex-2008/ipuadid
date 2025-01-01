@@ -5,43 +5,40 @@
 #include <ngx_crypt.h>
 #include <time.h>
 #include "ngx_ipscrub_support.h"
-#include "ngx_ipscrub_debug.h"
 
 typedef struct {
   ngx_int_t  period_seconds;
   ngx_int_t  period_offset;
-} ngx_ipscrub_conf_t;
+} ngx_ipuadid_conf_t;
 
-static void * ngx_ipscrub_create_conf(ngx_conf_t *cf);
-static char * ngx_ipscrub_conf(ngx_conf_t *cf, void *conf);
+static void * ngx_ipuadid_create_conf(ngx_conf_t *cf);
+static char * ngx_ipuadid_conf(ngx_conf_t *cf, void *conf);
 
-static ngx_int_t ngx_http_variable_remote_addr_ipscrub(ngx_http_request_t *r,
+static ngx_int_t ngx_http_variable_ipuadid(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data);
 
-static ngx_int_t ngx_ipscrub_init(ngx_conf_t *cf);
-static ngx_int_t ngx_ipscrub_add_variables(ngx_conf_t *cf);
+static ngx_int_t ngx_ipuadid_init(ngx_conf_t *cf);
+static ngx_int_t ngx_ipuadid_add_variables(ngx_conf_t *cf);
 
-static ngx_http_variable_t ngx_http_ipscrub_vars[] = {
-    {ngx_string("remote_addr_ipscrub"), NULL, ngx_http_variable_remote_addr_ipscrub, 0, 0, 0},
-    {ngx_string("ipscrub_hash_debug"), NULL, ngx_http_variable_remote_addr_ipscrub_debug, 0, 0, 0},
-    {ngx_string("ipscrub_salted_hash_debug"), NULL, ngx_http_variable_ipscrub_salted_hash_debug, 0, 0, 0},
+static ngx_http_variable_t ngx_http_ipuadid_vars[] = {
+    {ngx_string("ipuadid"), NULL, ngx_http_variable_ipuadid, 0, 0, 0},
     {ngx_null_string, NULL, NULL, 0, 0, 0 }};
 
 
-static ngx_command_t  ngx_ipscrub_commands[] = {
+static ngx_command_t  ngx_ipuadid_commands[] = {
 
-    { ngx_string("ipscrub_period_seconds"),
+    { ngx_string("ipuadid_period_seconds"),
       NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_num_slot,
       NGX_HTTP_MAIN_CONF_OFFSET,
-      offsetof(ngx_ipscrub_conf_t, period_seconds),
+      offsetof(ngx_ipuadid_conf_t, period_seconds),
       NULL },
 
-    { ngx_string("ipscrub_period_offset"),
+    { ngx_string("ipuadid_period_offset"),
       NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
       ngx_conf_set_num_slot,
       NGX_HTTP_MAIN_CONF_OFFSET,
-      offsetof(ngx_ipscrub_conf_t, period_offset),
+      offsetof(ngx_ipuadid_conf_t, period_offset),
       NULL },
 
     ngx_null_command
@@ -54,12 +51,12 @@ time_t period_number = -1;
 u_char nonce[num_nonce_bytes]; // Input to salt generation.
 
 
-static ngx_http_module_t  ngx_ipscrub_module_ctx = {
-    ngx_ipscrub_init,                      /* preconfiguration */
+static ngx_http_module_t  ngx_ipuadid_module_ctx = {
+    ngx_ipuadid_init,                      /* preconfiguration */
     NULL,                                  /* postconfiguration */
 
-    ngx_ipscrub_create_conf,               /* create main configuration */
-    ngx_ipscrub_conf,                      /* init main configuration */
+    ngx_ipuadid_create_conf,               /* create main configuration */
+    ngx_ipuadid_conf,                      /* init main configuration */
 
     NULL,                                  /* create server configuration */
     NULL,                                  /* merge server configuration */
@@ -69,10 +66,10 @@ static ngx_http_module_t  ngx_ipscrub_module_ctx = {
 };
 
 
-ngx_module_t  ngx_ipscrub_module = {
+ngx_module_t  ngx_ipuadid_module = {
     NGX_MODULE_V1,
-    &ngx_ipscrub_module_ctx,               /* module context */
-    ngx_ipscrub_commands,                  /* module directives */
+    &ngx_ipuadid_module_ctx,               /* module context */
+    ngx_ipuadid_commands,                  /* module directives */
     NGX_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
@@ -87,11 +84,11 @@ ngx_module_t  ngx_ipscrub_module = {
 
 /* Configuration support. */
 static void *
-ngx_ipscrub_create_conf(ngx_conf_t *cf)
+ngx_ipuadid_create_conf(ngx_conf_t *cf)
 {
-    ngx_ipscrub_conf_t  *icf;
+    ngx_ipuadid_conf_t  *icf;
 
-    icf = ngx_pcalloc(cf->pool, sizeof(ngx_ipscrub_conf_t));
+    icf = ngx_pcalloc(cf->pool, sizeof(ngx_ipuadid_conf_t));
     if (icf == NULL) {
         return NULL;
     }
@@ -103,9 +100,9 @@ ngx_ipscrub_create_conf(ngx_conf_t *cf)
 }
 
 static char *
-ngx_ipscrub_conf(ngx_conf_t *cf, void *conf)
+ngx_ipuadid_conf(ngx_conf_t *cf, void *conf)
 {
-    ngx_ipscrub_conf_t *icf = conf;
+    ngx_ipuadid_conf_t *icf = conf;
 
     ngx_conf_init_value(icf->period_seconds, default_period_seconds);
     ngx_conf_init_value(icf->period_offset, 0);
@@ -116,17 +113,17 @@ ngx_ipscrub_conf(ngx_conf_t *cf, void *conf)
 
 /* Variable support. */
 static ngx_int_t
-ngx_ipscrub_init(ngx_conf_t *cf)
+ngx_ipuadid_init(ngx_conf_t *cf)
 {
-  return ngx_ipscrub_add_variables(cf);
+  return ngx_ipuadid_add_variables(cf);
 }
 
 static ngx_int_t
-ngx_ipscrub_add_variables(ngx_conf_t *cf)
+ngx_ipuadid_add_variables(ngx_conf_t *cf)
 {
   ngx_http_variable_t *var, *v;
 
-  for (v = ngx_http_ipscrub_vars; v->name.len; v++)
+  for (v = ngx_http_ipuadid_vars; v->name.len; v++)
   {
     var = ngx_http_add_variable(cf, &v->name, v->flags);
     if (var == NULL)
@@ -142,7 +139,7 @@ ngx_ipscrub_add_variables(ngx_conf_t *cf)
 }
 
 static ngx_int_t
-ngx_http_variable_remote_addr_ipscrub(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
+ngx_http_variable_ipuadid(ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data)
 {
   ngx_int_t   rc;
   u_char     *hashed;
@@ -151,8 +148,8 @@ ngx_http_variable_remote_addr_ipscrub(ngx_http_request_t *r, ngx_http_variable_v
   u_int       len;
 
   // Get period_seconds from current configuration.
-  ngx_ipscrub_conf_t  *icf;
-  icf = ngx_http_get_module_main_conf(r, ngx_ipscrub_module);
+  ngx_ipuadid_conf_t  *icf;
+  icf = ngx_http_get_module_main_conf(r, ngx_ipuadid_module);
 
   // Regenerate salt if past end of period.
   time_t now = (time(NULL)-icf->period_offset)/icf->period_seconds;
