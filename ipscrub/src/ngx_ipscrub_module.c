@@ -145,14 +145,13 @@ ngx_http_variable_remote_addr_ipscrub(ngx_http_request_t *r, ngx_http_variable_v
   icf = ngx_http_get_module_main_conf(r, ngx_ipscrub_module);
 
   // Regenerate salt if past end of period.
-  time_t now = time(NULL);
-  if (period_start == -1 || now - period_start > icf->period_seconds) {
+  time_t now = time(NULL)/icf->period_seconds;
+  if (period_start == -1 || now > period_start) {
     rc = randbytes((u_char *) &nonce, num_nonce_bytes);
     if (rc != NGX_OK) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    // TODO: actually calculate when period_start should have been.
     period_start = now;
   }
 
