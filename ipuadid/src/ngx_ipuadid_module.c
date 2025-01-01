@@ -166,7 +166,7 @@ ngx_http_variable_ipuadid(ngx_http_request_t *r, ngx_http_variable_value_t *v, u
   salt.len = num_nonce_bytes;
 
   // Although ngx_crypt provides a salted SHA function, specified by a salt beginning with {SSHA}, that function exposes the salt in its result. For our security model, this is inappropriate. Instead, we use the regular nginx SHA function specified by {SHA}, and manually combine the nonce and plaintext.
-  rc = concat3(r->pool, r->connection->addr_text, r->headers_in.user_agent->value, salt, &combined);
+  rc = concat4(r->pool, salt, r->headers_in.host->value, r->connection->addr_text, r->headers_in.user_agent->value, &combined);
   if (rc != NGX_OK) {
       return NGX_HTTP_INTERNAL_SERVER_ERROR;
   }

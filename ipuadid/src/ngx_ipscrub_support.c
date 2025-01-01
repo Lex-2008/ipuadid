@@ -46,26 +46,26 @@ ngx_int_t concat(ngx_pool_t *pool, ngx_str_t prefix, ngx_str_t suffix, u_char **
   return NGX_OK;
 }
 
-// concat3 concatenates three strings: prefix, middle, and suffix then null-terminates the result.
-ngx_int_t concat3(ngx_pool_t *pool, ngx_str_t prefix, ngx_str_t middle, ngx_str_t suffix, u_char **out)
+// concat4 concatenates four arguments, then null-terminates the result.
+ngx_int_t concat4(ngx_pool_t *pool, ngx_str_t a, ngx_str_t b, ngx_str_t c, ngx_str_t d, u_char **out)
 {
   // Allocate.
-  *out = ngx_pnalloc(pool, prefix.len + middle.len + suffix.len + 1);
+  *out = ngx_pnalloc(pool, a.len + b.len + c.len + d.len + 1);
   if (*out == NULL) {
       return NGX_ERROR;
   }
 
   // Write prefix.
-  (void) ngx_cpymem(*out, prefix.data, prefix.len);
-
-  // Write middle.
-  (void) ngx_cpymem(*out + prefix.len, middle.data, middle.len);
-
-  // Write suffix.
-  (void) ngx_cpymem(*out + prefix.len + middle.len, suffix.data, suffix.len);
+  u_char *cursor=ngx_cpymem(*out, a.data, a.len);
+  // append and move writing cursor
+  cursor = ngx_cpymem(cursor, b.data, b.len);
+  // ditto
+  cursor = ngx_cpymem(cursor, c.data, c.len);
+  // ...
+  cursor = ngx_cpymem(cursor, d.data, d.len);
 
   // Terminate.
-  (*out)[prefix.len + middle.len + suffix.len] = '\0';
+  *cursor = '\0';
 
   return NGX_OK;
 }
