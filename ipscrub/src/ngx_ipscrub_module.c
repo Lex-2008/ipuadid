@@ -49,7 +49,7 @@ static ngx_command_t  ngx_ipscrub_commands[] = {
 
 // Globals.
 const int default_period_seconds = 10 * 60; // Period between salt changes.
-time_t period_start = -1;
+time_t period_number = -1;
 #define num_nonce_bytes 16
 u_char nonce[num_nonce_bytes]; // Input to salt generation.
 
@@ -156,13 +156,13 @@ ngx_http_variable_remote_addr_ipscrub(ngx_http_request_t *r, ngx_http_variable_v
 
   // Regenerate salt if past end of period.
   time_t now = (time(NULL)-icf->period_offset)/icf->period_seconds;
-  if (period_start == -1 || now > period_start) {
+  if (period_number == -1 || now > period_number) {
     rc = randbytes((u_char *) &nonce, num_nonce_bytes);
     if (rc != NGX_OK) {
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    period_start = now;
+    period_number = now;
   }
 
   salt.data = (u_char *) &nonce;
