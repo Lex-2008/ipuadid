@@ -46,6 +46,30 @@ ngx_int_t concat(ngx_pool_t *pool, ngx_str_t prefix, ngx_str_t suffix, u_char **
   return NGX_OK;
 }
 
+// concat3 concatenates three strings: prefix, middle, and suffix then null-terminates the result.
+ngx_int_t concat3(ngx_pool_t *pool, ngx_str_t prefix, ngx_str_t middle, ngx_str_t suffix, u_char **out)
+{
+  // Allocate.
+  *out = ngx_pnalloc(pool, prefix.len + middle.len + suffix.len + 1);
+  if (*out == NULL) {
+      return NGX_ERROR;
+  }
+
+  // Write prefix.
+  (void) ngx_cpymem(*out, prefix.data, prefix.len);
+
+  // Write middle.
+  (void) ngx_cpymem(*out + prefix.len, middle.data, middle.len);
+
+  // Write suffix.
+  (void) ngx_cpymem(*out + prefix.len + middle.len, suffix.data, suffix.len);
+
+  // Terminate.
+  (*out)[prefix.len + middle.len + suffix.len] = '\0';
+
+  return NGX_OK;
+}
+
 // randbytes fills out with secure random bytes.
 // Return value of NGX_OK indicates success.
 // Return value of NGX_ERROR indicates error.
