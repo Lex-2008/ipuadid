@@ -9,6 +9,7 @@
 
 typedef struct {
   ngx_int_t  period_seconds;
+  ngx_int_t  period_offset;
 } ngx_ipscrub_conf_t;
 
 static void * ngx_ipscrub_create_conf(ngx_conf_t *cf);
@@ -34,6 +35,13 @@ static ngx_command_t  ngx_ipscrub_commands[] = {
       ngx_conf_set_num_slot,
       NGX_HTTP_MAIN_CONF_OFFSET,
       offsetof(ngx_ipscrub_conf_t, period_seconds),
+      NULL },
+
+    { ngx_string("ipscrub_period_offset"),
+      NGX_HTTP_MAIN_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_num_slot,
+      NGX_HTTP_MAIN_CONF_OFFSET,
+      offsetof(ngx_ipscrub_conf_t, period_offset),
       NULL },
 
     ngx_null_command
@@ -89,6 +97,7 @@ ngx_ipscrub_create_conf(ngx_conf_t *cf)
     }
 
     icf->period_seconds = NGX_CONF_UNSET;
+    icf->period_offset = NGX_CONF_UNSET;
 
     return icf;
 }
@@ -99,6 +108,7 @@ ngx_ipscrub_conf(ngx_conf_t *cf, void *conf)
     ngx_ipscrub_conf_t *icf = conf;
 
     ngx_conf_init_value(icf->period_seconds, default_period_seconds);
+    ngx_conf_init_value(icf->period_offset, 0);
 
     return NGX_CONF_OK;
 }
@@ -145,7 +155,7 @@ ngx_http_variable_remote_addr_ipscrub(ngx_http_request_t *r, ngx_http_variable_v
   icf = ngx_http_get_module_main_conf(r, ngx_ipscrub_module);
 
   // Regenerate salt if past end of period.
-  time_t now = time(NULL)/icf->period_seconds;
+  time_t now = (time(NULL)-icf->period_offset)/icf->period_seconds;
   if (period_start == -1 || now > period_start) {
     rc = randbytes((u_char *) &nonce, num_nonce_bytes);
     if (rc != NGX_OK) {
