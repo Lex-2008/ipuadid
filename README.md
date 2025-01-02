@@ -1,3 +1,44 @@
+`ipuadid`, short for IP, User-Agent, and Date-based ID, an nginx module.
+=======================================================
+
+I'm not very good at names...
+
+Based on the [original idea][pl] by Plausible, and [original implementation][upstream] of `ipscrub` by Mason Simon.
+
+[pl]: https://plausible.io/data-policy#how-we-count-unique-users-without-cookies
+[upstream]: https://github.com/masonicboom/ipscrub
+
+> Disclaimer: I'm neither a lawyer, nor a real developer.
+> I just wanted to be nice to visitors of my website,
+> and track them in the most provacy-respecting way.
+
+This module provides one nginx config variable:
+
+* `$ipuadid`, which is calculated like this:
+    
+      substr(base64(SHA("$remote_addr$user_agent$salt")),8)
+
+    where `$remote_addr` and `$user_agent` are relevant nginx variables,
+    `$salt` is random 16 bytes value, which is periodically regenerated
+    (configurable, by default every 10 minutes, recommended configuration is daily).
+    These variables are concatenated, then their SHA checksum is calculated,
+    base64-encoded, and result truncated to 8 characters for IPv4 address,
+    and 24 characters for IPv6 address.
+
+    You are expected to use it in your logs instead of `$remote_addr` and `$user_agent` variables.
+    If you're planning to keep `$user_agent` - then probably upstream `ipscrub` would be enough for you.
+
+Two configuration options are:
+
+* `ipuadid_period_seconds` - how often to update salt, once every 10 minutes by default.
+
+* `ipuadid_period_offset` - delay after start of relevant time period,
+    after which to update it.
+
+Original readdme for ipscrub follows:
+
+* * *
+
 # `ipscrub`
 
 `ipscrub` is an IP address anonymizer for [nginx](https://www.nginx.com) log files. It's an nginx module that generates an IP-based hash. You can use this hash to link requests from the same source, without identifying your users by IP address.
