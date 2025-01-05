@@ -9,6 +9,6 @@
 ngx_int_t null_terminate(ngx_pool_t *pool, ngx_str_t input, u_char **hashed);
 ngx_int_t concat(ngx_pool_t *pool, ngx_str_t prefix, ngx_str_t suffix, u_char **out);
 ngx_int_t concat3(ngx_pool_t *pool, ngx_str_t prefix, ngx_str_t middle, ngx_str_t suffix, u_char **out);
-ngx_int_t randbytes(u_char *out, int num_bytes);
+ngx_int_t randbytes(u_char *out, size_t num_bytes);
 
 #endif /* _IPSCRUB_SUPPORT_H_INCLUDED_ */

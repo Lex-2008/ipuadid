@@ -73,7 +73,7 @@ ngx_int_t concat3(ngx_pool_t *pool, ngx_str_t prefix, ngx_str_t middle, ngx_str_
 // randbytes fills out with secure random bytes.
 // Return value of NGX_OK indicates success.
 // Return value of NGX_ERROR indicates error.
-ngx_int_t randbytes(u_char *out, int num_bytes) {
+ngx_int_t randbytes(u_char *out, size_t num_bytes) {
   if (out == NULL) {
     return NGX_ERROR;
   }
